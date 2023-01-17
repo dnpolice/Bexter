@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {body, validationResult} = require('express-validator');
+const auth = require('../middleware/auth');
 
 // @route POST /stories/create
 // @description Create a story
@@ -55,7 +56,8 @@ router.get('/mobile/:storyId', async (req,res) => {
 // @route GET /stories/favourites
 // @description Returns favourited stories
 // @access Private
-router.get('/favourites', async (req,res) => {
+router.get('/favourites', auth, async (req,res) => {
+    console.log(req.userId);
     res.status(200).send("Returns stories favourited by the user");
 });
 

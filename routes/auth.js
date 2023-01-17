@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const {body, validationResult} = require('express-validator');
+const auth = require('../middleware/auth');
 
 /*
     @route GET /auth
     @description Authenticate users through a token
     @access Private
 */
-router.get('/', (req, res) => {
-    res.status(200).send("Check token of the user")
+router.get('/', auth, (req, res) => {
+    res.status(200).send(`The users id is ${req.userId}`)
 });
 
 /*
