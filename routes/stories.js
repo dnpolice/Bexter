@@ -103,3 +103,5 @@ router.post('/invisable', [
 ], async (req,res) => {
     res.status(200).send(`${req.body.storyId} made invisible`);
 });
+
+module.exports = router;
