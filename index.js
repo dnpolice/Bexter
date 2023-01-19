@@ -1,13 +1,14 @@
 const express = require('express');
-
+const mysql = require('mysql2');
 const app = express();
+require('./mysql/config');
 
 app.use(express.json({ extended: false }));
 
 app.use('/auth', require('./routes/auth'));
 app.use('/users', require('./routes/users'));
 app.use('/stories', require('./routes/stories'));
-
+app.use('/test', require('./routes/test'));
 
 const PORT = process.env.PORT || 5000;
 

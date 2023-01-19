@@ -1,13 +1,4 @@
-const con = require('./config')
-
-con.connect((err) => {
-  if(err){
-    console.log('Error connecting to Db');
-    console.log(err.message);
-    return;
-  }
-  console.log('Connection established');
-});
+const db = require('./config')
 
 // let createUsersTableQuery = 
 //   `CREATE TABLE if not exists users(
@@ -24,14 +15,14 @@ con.connect((err) => {
 let insertUserQuery = 
     `INSERT INTO users(email,password, robotSerialNumber, dateCreated)
     VALUES('someemail', 'somepassword', 1, NOW())`;
-con.query(insertUserQuery, (err) => {
+db.query(insertUserQuery, (err) => {
   if(err) throw err;
 });
 
-con.query('SELECT * FROM users', (err,rows) => {
+db.query('SELECT * FROM users', (err,rows) => {
   if(err) throw err;
   console.log('Data received from Db:');
   console.log(rows);
 });
 
-con.end();
+db.end();
