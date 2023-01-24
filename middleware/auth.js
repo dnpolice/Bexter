@@ -1,11 +1,20 @@
-module.exports = (req, res, next) => {
-    const token = req.header('x-auth-token');
-    try {
-        const user_id = token;
+const jwt = require('jsonwebtoken');
 
-        req.userId = user_id;
-        next();
-    } catch (error) {
-        res.status(401).json({msg: "Invalid token"})
-    }
+module.exports = (req, res, next) => {
+    const token = req.headers['x-auth-token']
+    // to use ^, where is the token stored..? 
+
+    //OR
+    // TODO: look for cookie in res.cookies and decode the cookie to get the token
+
+    if (token == null) return res.sendStatus(401)
+
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403)
+        
+        req.user = user
+        next()
+    })
+
+
 }

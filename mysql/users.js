@@ -11,7 +11,8 @@ const db = require('./config')
 // con.query(createUsersTableQuery, (err) => {
 //   if(err) throw err;
 // });
-
+// ok we might not need this file but im just leaving them so
+// i can go back to it
 let insertUserQuery = 
     `INSERT INTO users(email,password, robotSerialNumber, dateCreated)
     VALUES('someemail', 'somepassword', 1, NOW())`;
