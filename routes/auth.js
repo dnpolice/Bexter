@@ -17,16 +17,15 @@ router.get('/', auth, (req, res) => {
     @description Login a user
     @access Public
 */
-router.post('/', [
+router.post('/login', [
     body('email', 'Please incude a valid email').isEmail(),
     body('password', 'Please incude a valid name').not().isEmpty(),
 ], async (req, res) => {
     const requestErrors = validationResult(req);
     if(!requestErrors.isEmpty()){
-        return res.status(400).json({msg: 'Bad credentials'});
+        return res.status(400).json({msg: 'Bad input information'});
     }
-
-    res.status(200).send("Login the user")
+    res.status(200).send("Logged in the user")
 });
 
 

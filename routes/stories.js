@@ -83,9 +83,9 @@ router.post('/unfavourite', [
 // @description Returns stories with matching key learning outcomes
 // @access Public
 router.post('/search', [
-    body('keyLearningOutcomes', 'Please provide valid search conditions').not().isEmpty()
+    body('keyLearningOutcomes', 'Please provide valid search conditions').isArray()
 ], async (req,res) => {
-    res.status(200).send("Returns stories with corresponding key words");
+    res.status(200).send(`Returns stories with corresponding key words ${req.body.keyLearningOutcomes}`) ;
 });
 
 // @route POST /stories/visable
@@ -94,7 +94,7 @@ router.post('/search', [
 router.post('/visable', [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
 ], async (req,res) => {
-    res.status(200).send("Unavourited a story");
+    res.status(200).send(`Made story ${req.body.storyId} visable`);
 });
 
 // @route POST /stories/invisible
@@ -103,7 +103,7 @@ router.post('/visable', [
 router.post('/invisable', [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
 ], async (req,res) => {
-    res.status(200).send(`${req.body.storyId} made invisible`);
+    res.status(200).send(`Made story ${req.body.storyId} invisable`);
 });
 
 module.exports = router;
