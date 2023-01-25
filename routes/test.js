@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../mysql/config');
+const multer = require('multer');
+const upload = multer({dest: 'storage/'});
+const storyPhotos = upload.array("photos", 5);
+const coverPhoto = upload.single("coverPhoto");
+const path = require('path');
+const fs = require("fs");
 
 router.get('/createdb', (req, res) => {
     let sql = 'CREATE DATABASE if not exists bexter';
@@ -9,6 +15,42 @@ router.get('/createdb', (req, res) => {
         res.status(200).send('DB created');
     })
 });
+
+router.post("/images", coverPhoto, (req, res) => {
+    
+
+    res.status(200).json({msg: `The fieldName for the file is ${req.file.fieldname}`});
+});
+
+router.get("/images", (req, res) => {
+    let files = [];
+    let filepath = path.resolve(__dirname, "../storage/");
+
+    fs.readdir(filepath, function(err, items) {
+        if (err) throw err;
+        for (fileName of items) {
+            let fileUrl = filepath + "/" + fileName
+            res.download(fileUrl);
+        }
+    });
+})
+
+router.get('/createdb', (req, res) => {
+    let sql = 'CREATE DATABASE if not exists bexter';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        res.status(200).send('DB created');
+    })
+});
+
+router.get('/multer', (req, res) => {
+    let sql = 'CREATE DATABASE if not exists bexter';
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        res.status(200).send('DB created');
+    })
+});
+
 
 router.get('/createpoststable', (req, res) => {
     let sql = 'CREATE TABLE posts(id int AUTO_INCREMENT, title VARCHAR(255), body VARCHAR(255), PRIMARY KEY(id))';

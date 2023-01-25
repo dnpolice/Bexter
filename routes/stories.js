@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {body, validationResult} = require('express-validator');
 const auth = require('../middleware/auth');
+const db = require("../mysql/config");
+
 
 // @route POST /stories/create
 // @description Create a story
@@ -13,14 +15,51 @@ router.post('/create', [
     body('keyLearningOutcomes', 'Please incude valid key learning outcomes').isArray(),
     body('coverPhoto', 'Please incude a valid name').not().isEmpty(),
     body('voiceRecording', 'Please include a valid voice recording').not().isEmpty(),
-    body('storyPhotos', 'Please include a valid story photos').isArray()
+    body('storyPhotos', 'Please include a valid story photos').isArray(),
+    body('transcriptOfKeywords', 'Please include a valid transcript of keywords').isArray(),
+    body('isVisible', 'Please include a valid is visable field').not().isEmpty(),
 ], async (req,res) => {
     const requestErrors = validationResult(req);
     if(!requestErrors.isEmpty()){
-        return res.status(400).json({msg: 'Bad input'});
+        return res.status(400).json({msg: requestErrors.array()});
     }
 
-    res.status(200).send("Create a story");
+    let photo = res.body.coverPhoto;
+    const cover_photo_path = `photos/${photo.name}`;
+    try {
+        await photo.mv(photo_path);
+    } catch (err) {
+        return res.status(500).json({ msg: err });
+    }
+
+    let story = {
+        title: req.body.title,
+        author: req.body.author,
+        description: req.body.description,
+        key_learning_outcomes: JSON.stringify(req.body.keyLearningOutcomes),
+        cover_photo_path: req.body.coverPhoto,
+        voice_recording_path: req.body.voiceRecording,
+        story_photos: JSON.stringify(req.body.storyPhotos),
+        transcript_of_keywords: JSON.stringify(req.body.transcriptOfKeywords),
+        is_visible:  req.body.isVisible,
+        date_created: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    };
+
+    let sql = 'INSERT INTO stories SET ?';
+    query = db.query(sql, story, (err, result) => {
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            console.log(err);
+            throw err;
+        } else {
+            console.log(result.insertId);
+            res.status(200).send({uuid: result.insertId});
+        }
+    });
+        
+        
+
+    r
 });
 
 // @route POST /stories/delete
