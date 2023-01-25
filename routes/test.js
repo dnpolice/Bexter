@@ -2,11 +2,14 @@ const express = require('express');
 const router = express.Router();
 const db = require('../mysql/config');
 const multer = require('multer');
-const upload = multer({dest: 'storage/'});
-const storyPhotos = upload.array("photos", 5);
-const coverPhoto = upload.single("coverPhoto");
+const uploadMulter = multer({dest: 'storage/'});
+const storyPhotos = uploadMulter.array("photos", 5);
+const coverPhoto = uploadMulter.single("coverPhoto");
 const path = require('path');
 const fs = require("fs");
+const util = require("util");
+const unlinkFile = util.promisify(fs.unlink);
+const {upload, getFileStream} = require("../mysql/s3");
 
 router.get('/createdb', (req, res) => {
     let sql = 'CREATE DATABASE if not exists bexter';
@@ -16,13 +19,38 @@ router.get('/createdb', (req, res) => {
     })
 });
 
-router.post("/images", coverPhoto, (req, res) => {
-    
+router.post("/images", coverPhoto, async (req, res) => {
+    const file = req.file;
+    console.log(file);
+    const result = await upload(file);
+    await unlinkFile(file.path);
+    console.log(result);
 
-    res.status(200).json({msg: `The fieldName for the file is ${req.file.fieldname}`});
+    res.status(200).json({msg: `The storage key is ${result.key}`});
 });
 
+
+router.get("/imagesS3/:key", (req, res) => {
+    const key = req.params.key;
+    const readStream = getFileStream(key);
+
+    readStream.pipe(res);
+})
+
 router.get("/images", (req, res) => {
+    let files = [];
+    let filepath = path.resolve(__dirname, "../storage/");
+
+    fs.readdir(filepath, function(err, items) {
+        if (err) throw err;
+        for (fileName of items) {
+            let fileUrl = filepath + "/" + fileName
+            res.download(fileUrl);
+        }
+    });
+})
+
+router.get("/image", (req, res) => {
     let files = [];
     let filepath = path.resolve(__dirname, "../storage/");
 

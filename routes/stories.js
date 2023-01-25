@@ -19,6 +19,9 @@ router.post('/create', [
     body('transcriptOfKeywords', 'Please include a valid transcript of keywords').isArray(),
     body('isVisible', 'Please include a valid is visable field').not().isEmpty(),
 ], async (req,res) => {
+    //Change to using form data
+    //Change to Content-Type = application/json
+
     const requestErrors = validationResult(req);
     if(!requestErrors.isEmpty()){
         return res.status(400).json({msg: requestErrors.array()});
