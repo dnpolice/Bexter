@@ -3,51 +3,64 @@ const router = express.Router();
 const {body, validationResult} = require('express-validator');
 const auth = require('../middleware/auth');
 const db = require("../mysql/config");
+const fs = require("fs");
+const util = require("util");
+const unlinkFile = util.promisify(fs.unlink);
+const {upload, getS3Object, getS3Objects} = require("../mysql/s3");
+
+//Setup file middleware
+const multer = require('multer');
+const uploadMulter = multer({dest: 'storage/'});
+const extractFiles = uploadMulter.fields([
+    {
+        name: 'coverPhoto', maxCount: 1
+    }, {
+        name: 'storyPhotos', maxCount: 100
+    }, {
+        name: 'voiceRecording', maxCount: 1
+    }
+]);
 
 
 // @route POST /stories/create
 // @description Create a story
 // @access Public
-router.post('/create', [
+router.post('/create', extractFiles, [
     body('title', 'Please incude a valid title').not().isEmpty(),
     body('author', 'Please incude a valid author').not().isEmpty(),
     body('description', 'Please incude a valid description').not().isEmpty(),
     body('keyLearningOutcomes', 'Please incude valid key learning outcomes').isArray(),
-    body('coverPhoto', 'Please incude a valid name').not().isEmpty(),
-    body('voiceRecording', 'Please include a valid voice recording').not().isEmpty(),
-    body('storyPhotos', 'Please include a valid story photos').isArray(),
     body('storyPhotoTimes', 'Please include a valid story photos').isArray(),
-    body('transcriptOfKeywords', 'Please include a valid transcript of keywords').isArray(),
+    body('transcriptOfKeywords', 'Please include a valid transcript of keywords').not().isEmpty(),
     body('isVisible', 'Please include a valid is visable field').not().isEmpty(),
 ], async (req,res) => {
-    //Change to using form data
-    //Change to Content-Type = application/json
-
+    //Checks errors in body data
     const requestErrors = validationResult(req);
     if(!requestErrors.isEmpty()){
         return res.status(400).json({msg: requestErrors.array()});
     }
 
-    let photo = res.body.coverPhoto;
-    const cover_photo_path = `photos/${photo.name}`;
-    try {
-        await photo.mv(photo_path);
-    } catch (err) {
-        return res.status(500).json({ msg: err });
-    }
+    const {
+        coverPhotoKey,
+        voiceRecordingKey,
+        storyPhotoKeys
+    } = await storeFilesInS3(
+            req.files.coverPhoto[0],
+            req.files.voiceRecording[0],
+            req.files.storyPhotos
+    );
 
     let story = {
         title: req.body.title,
         author: req.body.author,
         description: req.body.description,
         key_learning_outcomes: JSON.stringify(req.body.keyLearningOutcomes),
-        cover_photo_path: req.body.coverPhoto,
-        voice_recording_path: req.body.voiceRecording,
-        //Fix this
-        story_photo_paths: JSON.stringify(req.body.storyPhotos),
+        cover_photo_path: coverPhotoKey,
+        voice_recording_path: voiceRecordingKey,
+        story_photo_paths: JSON.stringify(storyPhotoKeys),
         story_photo_times: JSON.stringify(req.body.storyPhotoTimes),
         transcript_of_keywords: JSON.stringify(req.body.transcriptOfKeywords),
-        is_visible:  req.body.isVisible,
+        is_visible: req.body.isVisible == true || req.body.isVisible == "true",
         date_created: new Date().toISOString().slice(0, 19).replace('T', ' ')
     };
 
@@ -62,11 +75,26 @@ router.post('/create', [
             res.status(200).send({uuid: result.insertId});
         }
     });
-        
-        
-
-    r
 });
+
+const storeFilesInS3 = async (coverPhoto, voiceRecording, storyPhotos) => {
+    const coverPhotoKey = (await upload(coverPhoto)).key;
+    const voiceRecordingKey = (await upload(voiceRecording)).key;
+    await unlinkFile(coverPhoto.path);
+    await unlinkFile(voiceRecording.path);
+
+    const storyPhotoKeys = [];
+    for (storyPhoto of storyPhotos) {
+        storyPhotoKeys.push((await upload(storyPhoto)).key);
+        await unlinkFile(storyPhoto.path);
+    }
+
+    return {
+        coverPhotoKey,
+        voiceRecordingKey,
+        storyPhotoKeys
+    }
+}
 
 // @route POST /stories/delete
 // @description Delete a story
@@ -86,7 +114,38 @@ router.post('/delete', [
 // @description Return the story for the robot
 // @access Public
 router.get('/robot/:storyId', async (req,res) => {
-    res.status(200).send(`The storyId is ${req.params.storyId}`);
+    let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
+    db.query(sql, async (err, result) => {
+        if (err) throw err;
+        const story = result[0];
+        const cover_photo_key = story.cover_photo_path;
+        const voice_recording_key = story.voice_recording_path;
+        const story_photo_keys =  JSON.parse(story.story_photo_paths);
+
+        const coverPhoto = await getS3Object(cover_photo_key);
+        const voiceRecording = await getS3Object(voice_recording_key);
+        const storyPhotos = await getS3Objects(story_photo_keys);
+
+        const robotStory = {
+            coverPhoto,
+            voiceRecording,
+            storyPhotos,
+            storyPhotoTimes: JSON.parse(story.story_photo_times),
+	        transcriptOfKeyWords: JSON.parse(story.transcript_of_keywords)
+        }
+
+        
+        res.status(200).json(robotStory);
+    });
+});
+
+router.get('/getpost/:id', (req, res) => {
+    let sql = `SELECT * FROM posts where id = ${req.params.id}`;
+    db.query(sql, (err, result) => {
+        if (err) throw err;
+        console.log(result);
+        res.json({response: result});
+    });
 });
 
 

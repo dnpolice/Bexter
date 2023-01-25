@@ -14,7 +14,7 @@ const s3 = new S3({
 })
 
 //uploads a file to s3
-const upload = async (file) => {
+const upload = (file) => {
     const fileStream = fs.createReadStream(file.path);
 
     const uploadParams = {
@@ -35,6 +35,26 @@ const getFileStream = (fileKey) => {
     return s3.getObject(downloadParams).createReadStream();
 }
 
+const getS3Object = (key) => {
+    return s3.getObject({
+        Bucket: bucketName,
+        Key: key
+    }).promise();
+}
+
+const getS3Objects = (keys) => {
+    return Promise.all(keys.map(key =>
+        s3.getObject({
+            Bucket: bucketName,
+            Key: key
+        }).promise()
+    
+    ))
+};
+
 
 exports.upload = upload;
 exports.getFileStream = getFileStream;
+exports.getS3Object = getS3Object;
+exports.getS3Objects = getS3Objects;
+
