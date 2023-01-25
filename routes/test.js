@@ -3,8 +3,17 @@ const router = express.Router();
 const db = require('../mysql/config');
 const multer = require('multer');
 const uploadMulter = multer({dest: 'storage/'});
-const storyPhotos = uploadMulter.array("photos", 5);
+const storyPhotos = uploadMulter.array("storyPhotos", 5); 
 const coverPhoto = uploadMulter.single("coverPhoto");
+const fileFields = uploadMulter.fields([
+    {
+        name: 'coverPhoto', maxCount: 1
+    }, {
+        name: 'storyPhotos', maxCount: 100
+    }, {
+        name: 'voiceRecording', maxCount: 1
+    }
+]);
 const path = require('path');
 const fs = require("fs");
 const util = require("util");
@@ -29,6 +38,36 @@ router.post("/images", coverPhoto, async (req, res) => {
     res.status(200).json({msg: `The storage key is ${result.key}`});
 });
 
+// router.get("/imagesMulti", coverPhoto, async (req, res) => {
+//     const key = req.params.key;
+//     const readStream = getFileStream(key);
+
+//     readStream.pipe(res);
+// });
+
+router.post("/imagesMulti", fileFields, async (req, res) => {
+    const coverPhoto = req.files.coverPhoto[0];
+    const storyPhotos = req.files.storyPhotos;
+    const voiceRecording = req.files.voiceRecording[0];
+
+    const coverPhotoKey = (await upload(coverPhoto)).key;
+    const voiceRecordingKey = (await upload(voiceRecording)).key;
+    await unlinkFile(coverPhoto.path);
+    await unlinkFile(voiceRecording.path);
+
+    const storyPhotosKey = [];
+    for (storyPhoto of storyPhotos) {
+        storyPhotosKey.push((await upload(storyPhoto)).key);
+        await unlinkFile(storyPhoto.path);
+    }
+    
+
+    res.status(200).json({
+        coverPhotoKey,
+        storyPhotosKey,
+        voiceRecordingKey
+    });
+});
 
 router.get("/imagesS3/:key", (req, res) => {
     const key = req.params.key;

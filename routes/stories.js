@@ -16,6 +16,7 @@ router.post('/create', [
     body('coverPhoto', 'Please incude a valid name').not().isEmpty(),
     body('voiceRecording', 'Please include a valid voice recording').not().isEmpty(),
     body('storyPhotos', 'Please include a valid story photos').isArray(),
+    body('storyPhotoTimes', 'Please include a valid story photos').isArray(),
     body('transcriptOfKeywords', 'Please include a valid transcript of keywords').isArray(),
     body('isVisible', 'Please include a valid is visable field').not().isEmpty(),
 ], async (req,res) => {
@@ -42,7 +43,9 @@ router.post('/create', [
         key_learning_outcomes: JSON.stringify(req.body.keyLearningOutcomes),
         cover_photo_path: req.body.coverPhoto,
         voice_recording_path: req.body.voiceRecording,
-        story_photos: JSON.stringify(req.body.storyPhotos),
+        //Fix this
+        story_photo_paths: JSON.stringify(req.body.storyPhotos),
+        story_photo_times: JSON.stringify(req.body.storyPhotoTimes),
         transcript_of_keywords: JSON.stringify(req.body.transcriptOfKeywords),
         is_visible:  req.body.isVisible,
         date_created: new Date().toISOString().slice(0, 19).replace('T', ' ')
