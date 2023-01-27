@@ -1,2 +1,9 @@
 /node_modules
 /storage
+/requests/get_story_mobile/coverphoto
+/requests/get_story_robot/coverphoto
+/requests/get_story_robot/storyphotos
+/requests/get_story_robot/voicerecording
+/requests/post_story/coverphoto
+/requests/post_story/storyphotos
+/requests/post_story/voicerecording
