@@ -94,21 +94,28 @@ router.get('/robot/:storyId', async (req,res) => {
 });
 
 
-router.get('/getpost/:id', (req, res) => {
-    let sql = `SELECT * FROM posts where id = ${req.params.id}`;
-    db.query(sql, (err, result) => {
-        if (err) throw err;
-        console.log(result);
-        res.json({response: result});
-    });
-});
-
-
 // @route GET /stories/mobile/:storyId
 // @description Return the story for mobile
 // @access Public
 router.get('/mobile/:storyId', async (req,res) => {
-    res.status(200).send(`The storyId is ${req.params.storyId}`);
+    let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
+    db.query(sql, async (err, result) => {
+        if (err) throw err;
+        const story = result[0];
+        const cover_photo_key = story.cover_photo_path;
+
+        const coverPhoto = await getS3Object(cover_photo_key);
+
+        const robotStory = {
+            title: story.title,
+            author: story.author,
+            description: story.description,
+            keyLearningOutcomes: JSON.parse(story.key_learning_outcomes),
+            coverPhoto,
+        }
+        
+        res.status(200).json(robotStory);
+    });
 });
 
 
