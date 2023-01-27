@@ -34,9 +34,7 @@ router.post('/create', extractStoryFiles, verifyStoryInput, async (req,res) => {
         if (err) {
             res.status(500).json({msg: err.sqlMessage});
             console.log(err);
-            throw err;
         } else {
-            console.log(result.insertId);
             res.status(200).send({uuid: result.insertId});
         }
     });
@@ -64,7 +62,7 @@ router.post('/delete', [
 router.get('/robot/:storyId', async (req,res) => {
     let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
     db.query(sql, async (err, result) => {
-        if (err) throw err;
+        if (err) res.status(500).json({msg: err.sqlMessage});
         const story = result[0];
         const cover_photo_key = story.cover_photo_path;
         const voice_recording_key = story.voice_recording_path;
@@ -100,7 +98,7 @@ router.get('/robot/:storyId', async (req,res) => {
 router.get('/mobile/:storyId', async (req,res) => {
     let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
     db.query(sql, async (err, result) => {
-        if (err) throw err;
+        if (err) res.status(500).json({msg: err.sqlMessage});
         const story = result[0];
         const cover_photo_key = story.cover_photo_path;
 
@@ -131,20 +129,45 @@ router.get('/favourites', auth, async (req,res) => {
 // @route POST /stories/favourite
 // @description Favourite a story
 // @access Private
-router.post('/favourite', [
+router.post('/favourite', auth, [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
 ], async (req,res) => {
-    res.status(200).send("Favourited a story");
-});
+        let sql = `INSERT INTO user_to_story_favourite SET ?`;
+        let user_to_story_favourite = {
+            user_id: req.user,
+            story_id: req.body.storyId
+        }
+
+        db.query(sql, user_to_story_favourite, (err, result) => {
+            if (err) {
+                res.status(500).json({msg: err.sqlMessage});
+                console.log(err);
+            } else {
+                console.log(result)
+                res.status(200).send({msg: `Favourited story ${req.body.storyId}`});
+            }
+        });
+    }
+);
 
 
 // @route POST /stories/unfavourite
 // @description Unfavourite a story
 // @access Private
-router.post('/unfavourite', [
+router.post('/unfavourite', auth, [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
 ], async (req,res) => {
-    res.status(200).send("Unfavourited a story");
+    let sql = `DELETE FROM user_to_story_favourite where user_id = ${req.user} and story_id = ${req.body.storyId}`;
+
+    db.query(sql, (err, result) => {
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            console.log(err);
+        } else {
+            console.log(result);
+            res.status(200).send({msg: `Unfavourited story ${req.body.storyId}`});
+        }
+    })
 });
 
 
