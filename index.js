@@ -3,7 +3,8 @@ const mysql = require('mysql2');
 const app = express();
 require('./mysql/config');
 
-app.use(express.json({ extended: false }));
+// app.use(express.json({ extended: false }));
+app.use(express.json({ limit: '200mb', extended: true }));
 
 app.use('/auth', require('./routes/auth'));
 app.use('/users', require('./routes/users'));
