@@ -143,7 +143,6 @@ router.post('/favourite', auth, [
                 res.status(500).json({msg: err.sqlMessage});
                 console.log(err);
             } else {
-                console.log(result)
                 res.status(200).send({msg: `Favourited story ${req.body.storyId}`});
             }
         });
@@ -164,7 +163,6 @@ router.post('/unfavourite', auth, [
             res.status(500).json({msg: err.sqlMessage});
             console.log(err);
         } else {
-            console.log(result);
             res.status(200).send({msg: `Unfavourited story ${req.body.storyId}`});
         }
     })
@@ -181,23 +179,41 @@ router.post('/search', [
 });
 
 
-// @route POST /stories/visable
-// @description Make story visable
+// @route POST /stories/visible
+// @description Make story visible
 // @access Public
-router.post('/visable', [
+router.post('/visible', [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
 ], async (req,res) => {
-    res.status(200).send(`Made story ${req.body.storyId} visable`);
+    let sql = `UPDATE stories SET is_visible = true where id = ${req.body.storyId}`;
+    
+    db.query(sql, (err, result) => {
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            console.log(err);
+        } else {
+            res.status(200).send({msg: `Made story ${req.body.storyId} visable`});
+        }
+    }) 
 });
 
 
 // @route POST /stories/invisible
-// @description Make story invisisble
+// @description Make story invisible
 // @access Public
-router.post('/invisable', [
+router.post('/invisible', [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
 ], async (req,res) => {
-    res.status(200).send(`Made story ${req.body.storyId} invisable`);
+    let sql = `UPDATE stories SET is_visible = false where id = ${req.body.storyId}`;
+    
+    db.query(sql, (err, result) => {
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            console.log(err);
+        } else {
+            res.status(200).send({msg: `Made story ${req.body.storyId} invisible`});
+        }
+    }) 
 });
 
 module.exports = router;
