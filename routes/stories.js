@@ -104,7 +104,7 @@ router.get('/mobile/:storyId', async (req,res) => {
 
         const coverPhoto = await getS3Object(cover_photo_key);
 
-        const robotStory = {
+        const mobileStory = {
             title: story.title,
             author: story.author,
             description: story.description,
@@ -112,7 +112,7 @@ router.get('/mobile/:storyId', async (req,res) => {
             coverPhoto,
         }
         
-        res.status(200).json(robotStory);
+        res.status(200).json(mobileStory);
     });
 });
 
@@ -121,8 +121,31 @@ router.get('/mobile/:storyId', async (req,res) => {
 // @description Returns favourited stories
 // @access Private
 router.get('/favourites', auth, async (req,res) => {
-    console.log(req.userId);
-    res.status(200).send("Returns stories favourited by the user");
+    let sql = `select * from user_to_story_favourite INNER JOIN stories on user_to_story_favourite.story_id = stories.id where user_id = ${req.user}`;
+    db.query(sql, async (err, result) => {
+        if (err) res.status(500).json({msg: err.sqlMessage});
+        const coverPhotos = await Promise.all(result.map(story => {
+            console.log(story.cover_photo_path)
+            return getS3Object(story.cover_photo_path)
+        }));
+
+        
+        favouriteStories = []
+        for (let i = 0; i < coverPhotos.length; i++) {
+            console.log(coverPhotos[i])
+            const favouriteStory = {
+                title: result[i].title,
+                author: result[i].author,
+                description: result[i].description,
+                keyLearningOutcomes: JSON.parse(result[i].key_learning_outcomes),
+                coverPhoto: coverPhotos[i],
+            }
+            favouriteStories.push(favouriteStory);
+
+        }
+        
+        res.status(200).json(favouriteStories);
+    });
 });
 
 
