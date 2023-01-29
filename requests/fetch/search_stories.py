@@ -15,8 +15,5 @@ for i, story in enumerate(data):
     print("Author:", story["author"])
     print("Description:", story["description"])
     print("Key Learning Outcomes:", story["keyLearningOutcomes"])
-
-    cover_photo_path = os.path.dirname(__file__) + "/coverphoto/coverphoto"  +str(i) + ".png"
-    cover_photo_data = bytes(story["coverPhoto"]["Body"]["data"])
-    with open(cover_photo_path, 'wb') as img:
-        img.write(cover_photo_data)
+    print("Cover Photo:", story["coverPhoto"])
+    print("")

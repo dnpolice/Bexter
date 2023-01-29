@@ -4,7 +4,7 @@ const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const db = require("../mysql/config");
 const { storeFilesInS3, createStoryObj, extractStoryFiles, verifyStoryInput } = require("../helpers/stories");
-const { getS3Object, getS3Objects } = require("../mysql/s3");
+const { getS3Object, getS3Objects, getS3Url } = require("../mysql/s3");
 
 
 // @route POST /stories/create
@@ -16,7 +16,6 @@ router.post('/create', extractStoryFiles, verifyStoryInput, async (req,res) => {
     if(!requestErrors.isEmpty()){
         return res.status(400).json({msg: requestErrors.array()});
     }
-
     const {
         coverPhotoKey,
         voiceRecordingKey,
@@ -112,14 +111,14 @@ router.get('/mobile/:storyId', async (req,res) => {
         const story = result[0];
         const cover_photo_key = story.cover_photo_path;
 
-        const coverPhoto = await getS3Object(cover_photo_key);
+        const url = await getS3Url(cover_photo_key);
 
         const mobileStory = {
             title: story.title,
             author: story.author,
             description: story.description,
             keyLearningOutcomes: JSON.parse(story.key_learning_outcomes),
-            coverPhoto,
+            coverPhoto: url
         }
         
         res.status(200).json(mobileStory);
@@ -135,14 +134,12 @@ router.get('/favourites', auth, async (req,res) => {
     db.query(sql, async (err, result) => {
         if (err) res.status(500).json({msg: err.sqlMessage});
         const coverPhotos = await Promise.all(result.map(story => {
-            console.log(story.cover_photo_path)
-            return getS3Object(story.cover_photo_path)
+            return getS3Url(story.cover_photo_path)
         }));
 
         
         favouriteStories = []
         for (let i = 0; i < coverPhotos.length; i++) {
-            console.log(coverPhotos[i])
             const favouriteStory = {
                 title: result[i].title,
                 author: result[i].author,
@@ -166,7 +163,7 @@ router.post('/favourite', auth, [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
 ], async (req,res) => {
         const requestErrors = validationResult(req);
-        if(!requestErrors.isEmpty()){
+        if(!requestErrors.isEmpty()) {
             return res.status(400).json({msg: requestErrors.array()});
         }
         let sql = `INSERT INTO user_to_story_favourite SET ?`;
@@ -225,7 +222,7 @@ router.post('/search', [
     db.query(sql, async (err, result) => {
         if (err) res.status(500).json({msg: err.sqlMessage});
         const coverPhotos = await Promise.all(result.map(story => {
-            return getS3Object(story.cover_photo_path)
+            return getS3Url(story.cover_photo_path)
         }));
 
         searchStories = []
@@ -256,7 +253,7 @@ router.get('/all', async (req,res) => {
     db.query(sql, async (err, result) => {
         if (err) res.status(500).json({msg: err.sqlMessage});
         const coverPhotos = await Promise.all(result.map(story => {
-            return getS3Object(story.cover_photo_path)
+            return getS3Url(story.cover_photo_path)
         }));
 
         stories = []

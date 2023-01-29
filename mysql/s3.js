@@ -15,12 +15,20 @@ const s3 = new S3({
 
 //uploads a file to s3
 exports.upload = (file) => {
+    console.log(file)
     const fileStream = fs.createReadStream(file.path);
 
+    let filename = file.filename;
+    if (file.originalname.includes(".png") || file.originalname.includes(".mp3") || file.originalname.includes(".jpg")) {
+        filename += file.originalname.slice(-4);
+    } else if (file.originalname.includes(".jpeg")) {
+        filename += file.originalname.slice(-5)
+    }
     const uploadParams = {
         Bucket: bucketName,
         Body: fileStream,
-        Key: file.filename
+        Key: file.filename,
+        ContentType: file.mimetype
     }
 
     return s3.upload(uploadParams).promise()
@@ -51,3 +59,12 @@ exports.getS3Objects = (keys) => {
     
     ))
 };
+
+exports.getS3Url = (key) => {
+    return new Promise(function(resolve, reject) {
+        s3.getSignedUrl('getObject', {
+            Bucket: bucketName,
+            Key: key
+        }, function(err, url) { resolve(url); })
+   })
+}

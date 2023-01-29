@@ -11,7 +11,7 @@ fields = []
 # Add Story Photos
 for file_name in sorted(os.listdir(story_photo_path)):
     if file_name.endswith('.jpg') or file_name.endswith('.jpeg') or file_name.endswith('.png'):
-        fields.append(('storyPhotos', (file_name, open(os.path.join(story_photo_path, file_name), 'rb'), 'text/plain')))
+        fields.append(('storyPhotos', (file_name, open(os.path.join(story_photo_path, file_name), 'rb'), 'image/png')))
 
 # Add Story Photo Times
 storyPhotoTimes = ["1", "2"]
@@ -37,8 +37,8 @@ single_data_fields = [
     ('author', 'author'),
     ('description', 'Dog meets cat'),
     ('isVisible', "true"),
-    ('coverPhoto', (os.path.basename(cover_photo_path), open(cover_photo_path, 'rb'), 'text/plain')),
-    ('voiceRecording', (os.path.basename(voice_recording_path), open(voice_recording_path, 'rb'), 'text/plain'))
+    ('coverPhoto', (os.path.basename(cover_photo_path), open(cover_photo_path, 'rb'), 'image/png')),
+    ('voiceRecording', (os.path.basename(voice_recording_path), open(voice_recording_path, 'rb'), 'audio/mpeg'))
 ]
 
 fields += single_data_fields

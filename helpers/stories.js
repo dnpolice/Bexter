@@ -17,7 +17,6 @@ exports.storeFilesInS3 = async (coverPhoto, voiceRecording, storyPhotos) => {
     )))
 
     const result = await Promise.all(promises);
-    
     // Get keys and unlink files
     const coverPhotoKey = result[0].key;
     const voiceRecordingKey = result[1].key;
