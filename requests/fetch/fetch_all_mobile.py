@@ -1,6 +1,4 @@
 import requests
-import os
-import json
 
 url = 'http://localhost:5000/stories/all'
 headers = {'Content-type': 'application/json'}

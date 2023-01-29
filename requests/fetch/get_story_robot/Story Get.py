@@ -1,10 +1,12 @@
 import requests
 import os
 
-url = 'http://localhost:5000/stories/robot/23'
-response = requests.get(url)
-
+url = 'http://localhost:5000/stories/robot/34'
+headers = {"x-auth-token": "1"}
+response = requests.get(url, headers=headers)
+print(response.status_code)
 data = response.json()
+
 
 coverPhoto = data["coverPhoto"]
 voiceRecording = data["voiceRecording"]

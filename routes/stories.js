@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
+const robotAuth = require('../middleware/robotAuth');
+
 const db = require("../mysql/config");
 const { storeFilesInS3, createStoryObj, extractStoryFiles, verifyStoryInput } = require("../helpers/stories");
 const { getS3Object, getS3Objects, getS3Url } = require("../mysql/s3");

@@ -1,7 +1,7 @@
 import requests
 
 url = 'http://localhost:5000/stories/unfavourite'
-headers = {'Content-Type': 'application/json', 'x-auth-token': '8'}
+headers = {'Content-Type': 'application/json', 'x-auth-token': '6'}
 body = {
     'storyId': '1'
 }
