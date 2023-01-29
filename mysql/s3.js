@@ -15,7 +15,6 @@ const s3 = new S3({
 
 //uploads a file to s3
 exports.upload = (file) => {
-    console.log(file)
     const fileStream = fs.createReadStream(file.path);
 
     let filename = file.filename;

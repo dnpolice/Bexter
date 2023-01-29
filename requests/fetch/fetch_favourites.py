@@ -8,7 +8,6 @@ response = requests.get(url, headers = headers)
 data = response.json()
 
 for i, story in enumerate(data):
-    print(story.keys())
     print("Title:",  story["title"])
     print("Author", story["author"])
     print("Description", story["description"])

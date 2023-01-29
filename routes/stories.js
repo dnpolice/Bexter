@@ -68,7 +68,7 @@ router.post('/delete', [
 // @route GET /stories/robot/:storyId
 // @description Return the story for the robot
 // @access Public
-router.get('/robot/:storyId', async (req,res) => {
+router.get('/robot/:storyId', robotAuth, async (req,res) => {
     let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
     db.query(sql, async (err, result) => {
         if (err) res.status(500).json({msg: err.sqlMessage});
@@ -95,7 +95,25 @@ router.get('/robot/:storyId', async (req,res) => {
 	        transcriptOfKeywords: JSON.parse(story.transcript_of_keywords),
             transcriptOfKeywordTimes: JSON.parse(story.transcript_of_keyword_times)
         }
-        
+
+        // let user_id_query =  `Select * FROM users where robot_serial_number = ${req.robotSerialNumber}`;
+        // db.query(user_id_query, (err, result) => {
+        //     if (err){
+        //         console.log(err);
+        //     } else {
+        //         let user_id = result[0].id;
+        //         let previously_watched_sql = 'INSERT INTO user_to_story_previously_watched SET ?';
+        //         let user_to_story_previously_watched = {
+        //             story_id: result.insertId,
+        //             user_id
+        //         }
+                
+        //         db.query(previously_watched_sql, user_to_story_previously_watched, (err, result) => {
+        //             if (err) console.log(err);
+        //         });
+        //     }
+        // });
+
         res.status(200).json(robotStory);
     });
 });
@@ -122,6 +140,35 @@ router.get('/mobile/:storyId', async (req,res) => {
         }
         
         res.status(200).json(mobileStory);
+    });
+});
+
+// @route GET /stories/favourites
+// @description Returns favourited stories
+// @access Private
+router.get('/previouslyWatched', auth, async (req,res) => {
+    let sql = `select * from user_to_story_previously_watched INNER JOIN stories on user_to_story_previously_watched.story_id = stories.id where user_id = ${req.user}`;
+    db.query(sql, async (err, result) => {
+        if (err) res.status(500).json({msg: err.sqlMessage});
+        const coverPhotos = await Promise.all(result.map(story => {
+            return getS3Url(story.cover_photo_path)
+        }));
+
+        
+        previouslyWatchedStories = []
+        for (let i = 0; i < coverPhotos.length; i++) {
+            const previouslyWatchedStory = {
+                title: result[i].title,
+                author: result[i].author,
+                description: result[i].description,
+                keyLearningOutcomes: JSON.parse(result[i].key_learning_outcomes),
+                coverPhoto: coverPhotos[i],
+            }
+            previouslyWatchedStories.push(previouslyWatchedStory);
+
+        }
+        
+        res.status(200).json(previouslyWatchedStories);
     });
 });
 
