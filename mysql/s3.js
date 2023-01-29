@@ -67,3 +67,15 @@ exports.getS3Url = (key) => {
         }, function(err, url) { resolve(url); })
    })
 }
+
+exports.deleteS3Object = (key) => {
+    return new Promise(function(resolve, reject) {
+        s3.deleteObject({
+            Bucket: bucketName,
+            Key: key
+        }, (err, result) => {
+            if (err) console.log(err);
+            resolve();
+        })
+    })
+}

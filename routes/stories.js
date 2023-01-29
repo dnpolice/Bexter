@@ -6,7 +6,7 @@ const robotAuth = require('../middleware/robotAuth');
 
 const db = require("../mysql/config");
 const { storeFilesInS3, createStoryObj, extractStoryFiles, verifyStoryInput } = require("../helpers/stories");
-const { getS3Object, getS3Objects, getS3Url } = require("../mysql/s3");
+const { getS3Object, getS3Objects, getS3Url, deleteS3Object } = require("../mysql/s3");
 
 
 // @route POST /stories/create
@@ -57,13 +57,41 @@ router.post('/create', extractStoryFiles, verifyStoryInput, async (req,res) => {
 // @access Public
 router.post('/delete', [
     body('storyId', 'Please incude a valid storyId').not().isEmpty(),
-], async (req,res) => {
+], async (req, res) => {
     const requestErrors = validationResult(req);
     if(!requestErrors.isEmpty()){
-        return res.status(400).json({msg: 'Bad input'});
+        return res.status(400).json({msg: requestErrors.array()});
     }
+    console.log(req.body.storyId)
+    let sql = `SELECT * FROM stories where id = ${req.body.storyId}`;
+    db.query(sql, async (err, result) => {
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            return;
+        }
+        const story = result[0];
+        const cover_photo_key = story.cover_photo_path;
+        const voice_recording_key = story.voice_recording_path;
+        const story_photo_keys = JSON.parse(story.story_photo_paths);
 
-    res.status(200).send("Delete a story");
+        const promises = []
+        console.log(typeof cover_photo_key)
+        promises.push(deleteS3Object(cover_photo_key));
+        promises.push(deleteS3Object(voice_recording_key));
+        promises.push(Promise.all(story_photo_keys.map(story_key => { return deleteS3Object(story_key) })));
+        await Promise.all(promises);
+
+
+
+        let delete_query = `DELETE FROM stories WHERE id = ${req.body.storyId}`;
+        db.query(delete_query, (err, result) => {
+            if (err) {
+                res.status(500).json({msg: err.sqlMessage});
+            } else {
+                res.status(200).json({msg: `Story ${req.body.storyId} was deleted`});
+            }
+        });
+    });
 });
 
 
