@@ -27,25 +27,21 @@ router.post('/', [
     const { name, email, password, robotSerialNumber } = req.body;
 
     // Check if email exists in db
-    var userExists;
-    const fuck = () => { return new Promise(resolve =>
+    const checkUserExists = () => { return new Promise(resolve =>
         getUserWithEmail(email, (err, results) => {
             if (err) console.log(err)
             else resolve(Boolean(results.length >0))
         }
     ))}
-    const fuckfuck = await fuck();
-    if (fuckfuck== true){
+    const userExists = await checkUserExists();
+    if (userExists== true){
         console.log('exists')
         return res.status(409).json({msg: 'Email already exists, user not created'});
-    }
-    else{
-        console.log("continue")
     }
 
     // TODO: Hash password (or not?)
 
-    // Insert into db the user
+    // Insert the user into db 
     const dateCreated = new Date().toISOString().slice(0, 19).replace('T', ' ');
     db.query(`INSERT INTO users SET?`, 
         {
@@ -57,8 +53,9 @@ router.post('/', [
         }, (err) => {
             if(err) throw err;
     });
-    //then login ? do i need to redirect?
-    res.status(200).send("Create a user")
+    //then login ? do i need to set req.user? 
+    res.status(200).send("Created a user")
 });
 
 module.exports = router;
+module.exports.getUserWithEmail = getUserWithEmail;

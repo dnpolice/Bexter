@@ -1,23 +1,37 @@
 const jwt = require('jsonwebtoken');
+const userQuery = require('../routes/users');
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
+    /*
     const token = req.headers['x-auth-token']
-    // to use ^, where is the token stored..? 
-
-    //OR
-    // TODO: look for cookie in res.cookies and decode the cookie to get the token
-
+    // to use ^, where is the token stored..? - in req.body.token? or just a var?
     if (token == null) return res.sendStatus(401)
-
     req.user = token
     next()
+    // OR below
+    */
 
-    // jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-    //     if (err) return res.sendStatus(403)
+    if (req.cookies.saveUser) {
+        const decoded = jwt.verify(
+            req.cookies.saveUser, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) console.log(err)
+                else return decoded
+            }
+        )   
+        const getUser = () => { return new Promise(resolve =>
+            userQuery.getUserWithEmail(decoded.email, (err, results) => {
+                if (err) console.log(err)
+                else resolve(results)
+            }
+        ))}
+        const theUser = await getUser();
+        if (!theUser) console.log('user email not found');        
         
-    //     req.user = user
-    //     next()
-    // })
-
-
+        req.user = theUser[0];
+        console.log('user is logged in :))')            
+        console.log(req.user)
+    } else {
+        return res.status(401).json({msg: 'not logged in'});    
+    }    
+   next();
 }

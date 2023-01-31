@@ -3,7 +3,10 @@ const router = express.Router();
 const {body, validationResult} = require('express-validator');
 const auth = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
-require('dotenv').config()
+
+const userQuery = require('./users.js');
+
+require('dotenv').config();
 
 /*
     @route GET /auth
@@ -32,16 +35,32 @@ router.post('/login', [
     
     const { email, password } = req.body;
 
-    // TODO: query db to see if email and password matches
-    
-    //now create token:
-    const user = { email: email, password: password} ;
+    const fuck = () => { return new Promise(resolve =>
+        userQuery.getUserWithEmail(email, (err, results) => {
+            if (err) console.log(err)
+            else resolve(results)
+        }
+    ))}
+    const theUser = await fuck();
+    if (theUser.length > 0){
+        if (password !== theUser[0].password) {
+            return res.status(403).json({msg: 'Incorrect email/password'});
+        } 
+    }
+    else{
+        return res.status(403).json({msg: 'Incorrect email/password (user email not found)'});
+    }
+
+    // now create token:
+    const user = { email: email, password: password};
     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
     
-    // TODO: Save that token in cookie (or other storage..)
+    // Save that token in cookie (or other storage..)
+    // secure false for now
+    const cookieOptions = {httpOnly: true, secure: false};
+    res.cookie('saveUser', accessToken, cookieOptions);
 
-    res.status(200).json({accessToken: accessToken}).send("Logged in the user");
+    res.status(200).json({accessToken: accessToken});
 })
-
 
 module.exports = router;
