@@ -5,7 +5,7 @@ sys.path.append('../')
 import userAuth
 
 login_response = userAuth.signin()
-url = 'http://localhost:5000/stories/favourites'
+url = 'http://localhost:5000/stories/previouslyWatched'
 headers = {'Content-Type': 'application/json'}
 response = requests.get(url, headers = headers, cookies=login_response.cookies)
 data = response.json()
