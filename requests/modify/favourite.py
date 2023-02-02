@@ -1,9 +1,9 @@
 import requests
 import sys
 sys.path.append('../')
-import userAuth
+import user_auth
 
-login_response = userAuth.signin()
+login_response = user_auth.signin()
 url = 'http://localhost:5000/stories/favourite'
 headers = {'Content-Type': 'application/json'}
 body = {
