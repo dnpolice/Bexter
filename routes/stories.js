@@ -81,8 +81,6 @@ router.post('/delete', [
         promises.push(Promise.all(story_photo_keys.map(story_key => { return deleteS3Object(story_key) })));
         await Promise.all(promises);
 
-
-
         let delete_query = `DELETE FROM stories WHERE id = ${req.body.storyId}`;
         db.query(delete_query, (err, result) => {
             if (err) {
@@ -126,23 +124,28 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
             transcriptOfKeywordTimes: JSON.parse(story.transcript_of_keyword_times)
         }
 
-        // let user_id_query =  `Select * FROM users where robot_serial_number = ${req.robotSerialNumber}`;
-        // db.query(user_id_query, (err, result) => {
-        //     if (err){
-        //         console.log(err);
-        //     } else {
-        //         let user_id = result[0].id;
-        //         let previously_watched_sql = 'INSERT INTO user_to_story_previously_watched SET ?';
-        //         let user_to_story_previously_watched = {
-        //             story_id: result.insertId,
-        //             user_id
-        //         }
+        let user_id_query =  `Select * FROM users where robotSerialNumber = ${req.robotSerialNumber}`;
+        db.query(user_id_query, (err, result) => {
+            if (err){
+                console.log(err);
+            } else {
+                let user_id = result[0].userID;
+                let previously_watched_sql = 'INSERT INTO user_to_story_previously_watched SET ?';
+                let user_to_story_previously_watched = {
+                    story_id: req.params.storyId, 
+                    user_id: user_id
+                }
                 
-        //         db.query(previously_watched_sql, user_to_story_previously_watched, (err, result) => {
-        //             if (err) console.log(err);
-        //         });
-        //     }
-        // });
+                db.query(previously_watched_sql, user_to_story_previously_watched, (err, result) => {
+                    if (err) {
+                        if (err.code == 'ER_DUP_ENTRY')
+                            console.log(`Story #${req.params.storyId} already in prev watched`);
+                        else 
+                            console.log(err);
+                    }
+                });
+            }
+        });
 
         res.status(200).json(robotStory);
     });
@@ -177,15 +180,16 @@ router.get('/mobile/:storyId', async (req,res) => {
 // @description Returns previously watched stories
 // @access Private
 router.get('/previouslyWatched', auth, async (req,res) => {
-    let sql = `select * from user_to_story_previously_watched INNER JOIN stories on user_to_story_previously_watched.story_id = stories.id where user_id = ${req.user}`;
+    let sql = `select * from user_to_story_previously_watched INNER JOIN
+     stories on user_to_story_previously_watched.story_id = stories.id 
+     where user_id = ${req.user.userID}`;
     db.query(sql, async (err, result) => {
         if (err) res.status(500).json({msg: err.sqlMessage});
         const coverPhotos = await Promise.all(result.map(story => {
             return getS3Url(story.cover_photo_path)
         }));
 
-        
-        previouslyWatchedStories = []
+        var previouslyWatchedStories = []
         for (let i = 0; i < coverPhotos.length; i++) {
             const previouslyWatchedStory = {
                 title: result[i].title,
@@ -195,7 +199,6 @@ router.get('/previouslyWatched', auth, async (req,res) => {
                 coverPhoto: coverPhotos[i],
             }
             previouslyWatchedStories.push(previouslyWatchedStory);
-
         }
         
         res.status(200).json(previouslyWatchedStories);
@@ -207,15 +210,16 @@ router.get('/previouslyWatched', auth, async (req,res) => {
 // @description Returns favourited stories for a user
 // @access Private
 router.get('/favourites', auth, async (req,res) => {
-    let sql = `select * from user_to_story_favourite INNER JOIN stories on user_to_story_favourite.story_id = stories.id where user_id = ${req.user}`;
+    let sql = `select * from user_to_story_favourite 
+    INNER JOIN stories on user_to_story_favourite.story_id = stories.id 
+    where user_id = ${req.user.userID}`;
     db.query(sql, async (err, result) => {
         if (err) res.status(500).json({msg: err.sqlMessage});
         const coverPhotos = await Promise.all(result.map(story => {
             return getS3Url(story.cover_photo_path)
         }));
 
-        
-        favouriteStories = []
+        var favouriteStories = []
         for (let i = 0; i < coverPhotos.length; i++) {
             const favouriteStory = {
                 title: result[i].title,
@@ -225,7 +229,6 @@ router.get('/favourites', auth, async (req,res) => {
                 coverPhoto: coverPhotos[i],
             }
             favouriteStories.push(favouriteStory);
-
         }
         
         res.status(200).json(favouriteStories);
@@ -243,20 +246,31 @@ router.post('/favourite', auth, [
         if(!requestErrors.isEmpty()) {
             return res.status(400).json({msg: requestErrors.array()});
         }
-        let sql = `INSERT INTO user_to_story_favourite SET ?`;
-        let user_to_story_favourite = {
-            user_id: req.user,
-            story_id: req.body.storyId
-        }
-
-        db.query(sql, user_to_story_favourite, (err, result) => {
-            if (err) {
-                res.status(500).json({msg: err.sqlMessage});
-                console.log(err);
+        let sqlcheck = `SELECT * FROM stories WHERE id = ${req.body.storyId}`;
+        const exists = db.query(sqlcheck, async (err, result) => {
+            if (err) console.log(err);
+            if (result.length == 0){
+                return res.status(500).json({msg: "story does not exist"});
             } else {
-                res.status(200).send({msg: `Favourited story ${req.body.storyId}`});
+                let sql = `INSERT INTO user_to_story_favourite SET ?`;
+                let user_to_story_favourite = {
+                    user_id: req.user.userID,
+                    story_id: req.body.storyId
+                }
+        
+                db.query(sql, user_to_story_favourite, (err, result) => {
+                    if (err) {
+                        if (err.code == 'ER_DUP_ENTRY'){
+                            return res.status(500).json({msg: `Story #${req.body.storyId} already favourited`});
+                        }
+                        console.log(err);
+                        return res.status(500).json({msg: err.sqlMessage});
+                    } else {
+                        return res.status(200).send({msg: `Favourited story ${req.body.storyId}`});
+                    }
+                });
             }
-        });
+        })        
     }
 );
 
@@ -271,13 +285,15 @@ router.post('/unfavourite', auth, [
     if(!requestErrors.isEmpty()){
         return res.status(400).json({msg: requestErrors.array()});
     }
-    let sql = `DELETE FROM user_to_story_favourite where user_id = ${req.user} and story_id = ${req.body.storyId}`;
+    let sql = `DELETE FROM user_to_story_favourite 
+    where user_id = ${req.user.userID} and story_id = ${req.body.storyId}`;
 
     db.query(sql, (err, result) => {
         if (err) {
             res.status(500).json({msg: err.sqlMessage});
             console.log(err);
         } else {
+            // will print even if it did not delete cuz it didnt exist
             res.status(200).send({msg: `Unfavourited story ${req.body.storyId}`});
         }
     })
@@ -367,7 +383,7 @@ router.post('/visible', [
             res.status(500).json({msg: err.sqlMessage});
             console.log(err);
         } else {
-            res.status(200).send({msg: `Made story ${req.body.storyId} visable`});
+            res.status(200).send({msg: `Made story ${req.body.storyId} visible`});
         }
     }) 
 });

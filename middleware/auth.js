@@ -12,6 +12,9 @@ module.exports = async (req, res, next) => {
     */
 
     if (req.cookies.saveUser) {
+        if (req.cookies.saveUser == 'loggedout'){
+            return res.status(401).json({msg: 'not logged in'});    
+        }
         const decoded = jwt.verify(
             req.cookies.saveUser, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
                 if (err) console.log(err)
@@ -28,8 +31,6 @@ module.exports = async (req, res, next) => {
         if (!theUser) console.log('user email not found');        
         
         req.user = theUser[0];
-        console.log('user is logged in :))')            
-        console.log(req.user)
     } else {
         return res.status(401).json({msg: 'not logged in'});    
     }    

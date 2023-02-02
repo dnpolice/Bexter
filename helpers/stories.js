@@ -68,5 +68,5 @@ exports.verifyStoryInput = [
     body('storyPhotoTimes', 'Please include a valid story photos').isArray(),
     body('transcriptOfKeywords', 'Please include a valid transcript of keywords').not().isEmpty(),
     body('transcriptOfKeywordTimes', 'Please include valid transcript of keyword times').not().isEmpty(),
-    body('isVisible', 'Please include a valid is visable field').not().isEmpty(),
+    body('isVisible', 'Please include a valid is visible field').not().isEmpty(),
 ]

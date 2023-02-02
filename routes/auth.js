@@ -13,7 +13,6 @@ require('dotenv').config();
     @description Authenticate users through a token 
     @access Private
 */
-//what is this one for..? Moving the check-if-logged-in to middleware
 router.get('/', auth, (req, res) => {
     res.status(200).send(`The users email is ${req.user.email}`)
 });
@@ -29,19 +28,18 @@ router.post('/login', [
 ], async (req, res) => {
     const requestErrors = validationResult(req);
     if(!requestErrors.isEmpty()){
-        console.log(":((")
         return res.status(400).json({ errors: requestErrors.array() });
     }
     
     const { email, password } = req.body;
 
-    const fuck = () => { return new Promise(resolve =>
+    const getUser = () => { return new Promise(resolve =>
         userQuery.getUserWithEmail(email, (err, results) => {
             if (err) console.log(err)
             else resolve(results)
         }
     ))}
-    const theUser = await fuck();
+    const theUser = await getUser();
     if (theUser.length > 0){
         if (password !== theUser[0].password) {
             return res.status(403).json({msg: 'Incorrect email/password'});
@@ -62,5 +60,16 @@ router.post('/login', [
 
     res.status(200).json({accessToken: accessToken});
 })
+
+/*
+    @route GET /auth/logout
+    @description Logout the user
+    @access Public
+*/
+router.get('/logout', (req, res) => {
+    const cookieOptions = {httpOnly: true, secure: false};
+    res.cookie('saveUser', 'loggedout', cookieOptions);
+    res.status(200).send(`User signed out`)
+});
 
 module.exports = router;
