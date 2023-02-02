@@ -2,9 +2,9 @@ import requests
 import os
 import sys
 sys.path.append('../')
-import userAuth
+import user_auth
 
-login_response = userAuth.signin()
+login_response = user_auth.signin()
 url = 'http://localhost:5000/stories/favourites'
 headers = {'Content-Type': 'application/json'}
 response = requests.get(url, headers = headers, cookies=login_response.cookies)
