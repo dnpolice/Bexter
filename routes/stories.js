@@ -173,8 +173,8 @@ router.get('/mobile/:storyId', async (req,res) => {
     });
 });
 
-// @route GET /stories/favourites
-// @description Returns favourited stories
+// @route GET /stories/previouslyWatched
+// @description Returns previously watched stories
 // @access Private
 router.get('/previouslyWatched', auth, async (req,res) => {
     let sql = `select * from user_to_story_previously_watched INNER JOIN stories on user_to_story_previously_watched.story_id = stories.id where user_id = ${req.user}`;
@@ -204,7 +204,7 @@ router.get('/previouslyWatched', auth, async (req,res) => {
 
 
 // @route GET /stories/favourites
-// @description Returns favourited stories
+// @description Returns favourited stories for a user
 // @access Private
 router.get('/favourites', auth, async (req,res) => {
     let sql = `select * from user_to_story_favourite INNER JOIN stories on user_to_story_favourite.story_id = stories.id where user_id = ${req.user}`;
@@ -234,7 +234,7 @@ router.get('/favourites', auth, async (req,res) => {
 
 
 // @route POST /stories/favourite
-// @description Favourite a story
+// @description Favourite a story for a user
 // @access Private
 router.post('/favourite', auth, [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
@@ -262,7 +262,7 @@ router.post('/favourite', auth, [
 
 
 // @route POST /stories/unfavourite
-// @description Unfavourite a story
+// @description Unfavourite a story for a user
 // @access Private
 router.post('/unfavourite', auth, [
     body('storyId', 'Please provide a valid storyId').not().isEmpty()
@@ -322,8 +322,8 @@ router.post('/search', [
     });
 });
 
-// @route POST /stories/search
-// @description Returns stories with matching key learning outcomes
+// @route GET /stories/all
+// @description Returns all stories
 // @access Public
 router.get('/all', async (req,res) => {
     let sql = `select * from stories`;
