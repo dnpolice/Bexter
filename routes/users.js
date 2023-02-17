@@ -35,7 +35,6 @@ router.post('/', [
     ))}
     const userExists = await checkUserExists();
     if (userExists== true){
-        console.log('exists')
         return res.status(409).json({msg: 'Email already exists, user not created'});
     }
 

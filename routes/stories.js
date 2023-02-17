@@ -144,12 +144,7 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
                 
                 db.query(previously_watched_sql, user_to_story_previously_watched, (err, result) => {
                     if (err) {
-                        if (err.code == 'ER_DUP_ENTRY') {
-                            return res.status(500).json({msg: `Story #${req.params.storyId} already in prev watched`});
-                        } else {
-                            error = true
-                            return res.status(500).json({msg: err.sqlMessage});
-                        }
+                        if (err.code != 'ER_DUP_ENTRY') return res.status(500).json({msg: err.sqlMessage});
                     } else {
                         return res.status(200).json(robotStory);
                     }
