@@ -34,7 +34,7 @@ router.post('/create', extractStoryFiles, verifyStoryInput, async (req,res) => {
     query = db.query(sql, story, (err, result) => {
         if (err) {
             res.status(500).json({msg: err.sqlMessage});
-            console.log(err);
+            return;
         } else {
             let keyword_sql = 'INSERT INTO keyword_to_story SET ?';
             for (keyword of req.body.keyLearningOutcomes) {
@@ -43,7 +43,10 @@ router.post('/create', extractStoryFiles, verifyStoryInput, async (req,res) => {
                     keyword
                 }
                 db.query(keyword_sql, keyword_to_story, (err, result) => {
-                    if (err) console.log(err);
+                    if (err) {
+                        res.status(500).json({msg: err.sqlMessage});
+                        return;
+                    }
                 });
             }
             res.status(200).send({uuid: result.insertId});
@@ -99,7 +102,10 @@ router.post('/delete', [
 router.get('/robot/:storyId', robotAuth, async (req,res) => {
     let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
     db.query(sql, async (err, result) => {
-        if (err) res.status(500).json({msg: err.sqlMessage});
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            return;
+        }
         const story = result[0];
         const cover_photo_key = story.cover_photo_path;
         const voice_recording_key = story.voice_recording_path;
@@ -127,7 +133,8 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
         let user_id_query =  `Select * FROM users where robotSerialNumber = ${req.robotSerialNumber}`;
         db.query(user_id_query, (err, result) => {
             if (err){
-                console.log(err);
+                res.status(500).json({msg: err.sqlMessage});
+                return;
             } else {
                 let user_id = result[0].userID;
                 let previously_watched_sql = 'INSERT INTO user_to_story_previously_watched SET ?';
@@ -139,9 +146,11 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
                 db.query(previously_watched_sql, user_to_story_previously_watched, (err, result) => {
                     if (err) {
                         if (err.code == 'ER_DUP_ENTRY')
-                            console.log(`Story #${req.params.storyId} already in prev watched`);
+                            res.status(500).json({msg: `Story #${req.params.storyId} already in prev watched`});
                         else 
-                            console.log(err);
+                            res.status(500).json({msg: err.sqlMessage});
+                        
+                        return;
                     }
                 });
             }
@@ -158,7 +167,10 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
 router.get('/mobile/:storyId', async (req,res) => {
     let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
     db.query(sql, async (err, result) => {
-        if (err) res.status(500).json({msg: err.sqlMessage});
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            return;
+        }
         const story = result[0];
         const cover_photo_key = story.cover_photo_path;
 
@@ -184,7 +196,10 @@ router.get('/previouslyWatched', auth, async (req,res) => {
      stories on user_to_story_previously_watched.story_id = stories.id 
      where user_id = ${req.user.userID}`;
     db.query(sql, async (err, result) => {
-        if (err) res.status(500).json({msg: err.sqlMessage});
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            return;
+        }
         const coverPhotos = await Promise.all(result.map(story => {
             return getS3Url(story.cover_photo_path)
         }));
@@ -214,7 +229,10 @@ router.get('/favourites', auth, async (req,res) => {
     INNER JOIN stories on user_to_story_favourite.story_id = stories.id 
     where user_id = ${req.user.userID}`;
     db.query(sql, async (err, result) => {
-        if (err) res.status(500).json({msg: err.sqlMessage});
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            return;
+        }
         const coverPhotos = await Promise.all(result.map(story => {
             return getS3Url(story.cover_photo_path)
         }));
@@ -248,7 +266,10 @@ router.post('/favourite', auth, [
         }
         let sqlcheck = `SELECT * FROM stories WHERE id = ${req.body.storyId}`;
         const exists = db.query(sqlcheck, async (err, result) => {
-            if (err) console.log(err);
+            if (err) {
+                res.status(500).json({msg: err.sqlMessage});
+                return;
+            }
             if (result.length == 0){
                 return res.status(500).json({msg: "story does not exist"});
             } else {
@@ -263,7 +284,6 @@ router.post('/favourite', auth, [
                         if (err.code == 'ER_DUP_ENTRY'){
                             return res.status(500).json({msg: `Story #${req.body.storyId} already favourited`});
                         }
-                        console.log(err);
                         return res.status(500).json({msg: err.sqlMessage});
                     } else {
                         return res.status(200).send({msg: `Favourited story ${req.body.storyId}`});
@@ -291,7 +311,7 @@ router.post('/unfavourite', auth, [
     db.query(sql, (err, result) => {
         if (err) {
             res.status(500).json({msg: err.sqlMessage});
-            console.log(err);
+            return;
         } else {
             // will print even if it did not delete cuz it didnt exist
             res.status(200).send({msg: `Unfavourited story ${req.body.storyId}`});
@@ -313,7 +333,10 @@ router.post('/search', [
     const keywords = req.body.keyLearningOutcomes;
     let sql = `select * from keyword_to_story INNER JOIN stories on keyword_to_story.story_id = stories.id where keyword in (${keywords.map(keyword => `'${keyword}'`)})`;
     db.query(sql, async (err, result) => {
-        if (err) res.status(500).json({msg: err.sqlMessage});
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            return;
+        }
         const coverPhotos = await Promise.all(result.map(story => {
             return getS3Url(story.cover_photo_path)
         }));
@@ -344,7 +367,10 @@ router.post('/search', [
 router.get('/all', async (req,res) => {
     let sql = `select * from stories`;
     db.query(sql, async (err, result) => {
-        if (err) res.status(500).json({msg: err.sqlMessage});
+        if (err) {
+            res.status(500).json({msg: err.sqlMessage});
+            return;
+        }
         const coverPhotos = await Promise.all(result.map(story => {
             return getS3Url(story.cover_photo_path)
         }));
@@ -381,7 +407,7 @@ router.post('/visible', [
     db.query(sql, (err, result) => {
         if (err) {
             res.status(500).json({msg: err.sqlMessage});
-            console.log(err);
+            return;
         } else {
             res.status(200).send({msg: `Made story ${req.body.storyId} visible`});
         }
@@ -400,7 +426,7 @@ router.post('/invisible', [
     db.query(sql, (err, result) => {
         if (err) {
             res.status(500).json({msg: err.sqlMessage});
-            console.log(err);
+            return;
         } else {
             res.status(200).send({msg: `Made story ${req.body.storyId} invisible`});
         }

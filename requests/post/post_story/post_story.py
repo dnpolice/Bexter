@@ -46,7 +46,8 @@ fields += single_data_fields
 mp_encoder = MultipartEncoder(fields=fields, encoding='utf-8')
 
 # Send requests
-url = 'http://localhost:5000/stories/create'
+# url = 'http://localhost:5000/stories/create'
+url = 'http://18.188.11.133:5000/stories/create'
 headers = {'Content-type': mp_encoder.content_type}
 response = requests.post(url, headers=headers, data=mp_encoder)
 

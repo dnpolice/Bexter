@@ -1,7 +1,7 @@
 import requests
 import os
 
-url = 'http://localhost:5000/stories/mobile/34'
+url = 'http://18.188.11.133:5000/stories/mobile/2'
 response = requests.get(url)
 
 data = response.json()

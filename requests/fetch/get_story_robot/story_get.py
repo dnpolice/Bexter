@@ -1,7 +1,7 @@
 import requests
 import os
 
-url = 'http://localhost:5000/stories/robot/34'
+url = 'http://localhost:5000/stories/robot/48'
 headers = {"x-auth-token": "1"}
 response = requests.get(url, headers=headers)
 print(response.status_code)
@@ -38,3 +38,8 @@ for i in range(len(storyPhotos)):
     story_photo_path = story_photo_dir + fileNum + ".png"
     with open(story_photo_path, 'wb') as img:
         img.write(story_photo_data)
+
+json = {
+    storyPhotoTimes: data["storyPhotoTimes"],
+    transcriptOfKeywordTimes: data["transcriptOfKeywordTimes"]
+}
