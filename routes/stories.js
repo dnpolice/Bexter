@@ -106,6 +106,10 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
             res.status(500).json({msg: err.sqlMessage});
             return;
         }
+        if (result.length == 0) {
+            res.status(400).json({msg: "Story doesn't exist"});
+            return
+        }
         const story = result[0];
         const cover_photo_key = story.cover_photo_path;
         const voice_recording_key = story.voice_recording_path;
@@ -170,6 +174,10 @@ router.get('/mobile/:storyId', async (req,res) => {
         if (err) {
             res.status(500).json({msg: err.sqlMessage});
             return;
+        }
+        if (result.length == 0) {
+            res.status(400).json({msg: "Story doesn't exist"});
+            return
         }
         const story = result[0];
         const cover_photo_key = story.cover_photo_path;
