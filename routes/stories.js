@@ -325,7 +325,7 @@ router.post('/unfavourite', auth, [
             res.status(500).json({msg: err.sqlMessage});
             return;
         } else {
-            // will print even if it did not delete cuz it didnt exist
+            // Will print even if it did not delete cuz it didnt exist
             res.status(200).send({msg: `Unfavourited story ${req.body.storyId}`});
         }
     })
