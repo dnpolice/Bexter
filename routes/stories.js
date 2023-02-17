@@ -136,10 +136,14 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
 
         let user_id_query =  `Select * FROM users where robotSerialNumber = ${req.robotSerialNumber}`;
         db.query(user_id_query, (err, result) => {
-            if (err){
+            if (err) {
                 res.status(500).json({msg: err.sqlMessage});
                 return;
             } else {
+                if (result.length == 0) {
+                    res.status(400).json({msg: "Invalid robot serial number"});
+                    return;
+                }
                 let user_id = result[0].userID;
                 let previously_watched_sql = 'INSERT INTO user_to_story_previously_watched SET ?';
                 let user_to_story_previously_watched = {
