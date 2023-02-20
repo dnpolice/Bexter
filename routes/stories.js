@@ -119,6 +119,7 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
         const storyPhotos = promiseResult[2]
 
         const robotStory = {
+            id: story.id,
             coverPhoto,
             voiceRecording,
             storyPhotos,
@@ -172,6 +173,7 @@ router.get('/mobile/:storyId', async (req,res) => {
         const url = await getS3Url(cover_photo_key);
 
         const mobileStory = {
+            id: story.id,
             title: story.title,
             author: story.author,
             description: story.description,
@@ -201,6 +203,7 @@ router.get('/previouslyWatched', auth, async (req,res) => {
         var previouslyWatchedStories = []
         for (let i = 0; i < coverPhotos.length; i++) {
             const previouslyWatchedStory = {
+                id: result[i].id,
                 title: result[i].title,
                 author: result[i].author,
                 description: result[i].description,
@@ -233,6 +236,7 @@ router.get('/favourites', auth, async (req,res) => {
         var favouriteStories = []
         for (let i = 0; i < coverPhotos.length; i++) {
             const favouriteStory = {
+                id: result[i].id,
                 title: result[i].title,
                 author: result[i].author,
                 description: result[i].description,
@@ -339,6 +343,7 @@ router.post('/search', [
             v[id] = true;
 
             const story = {
+                id: result[i].id,
                 title: result[i].title,
                 author: result[i].author,
                 description: result[i].description,
@@ -372,6 +377,7 @@ router.get('/all', async (req,res) => {
             v[id] = true;
 
             const story = {
+                id: result[i].id,
                 title: result[i].title,
                 author: result[i].author,
                 description: result[i].description,
