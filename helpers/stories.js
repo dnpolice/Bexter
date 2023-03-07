@@ -15,21 +15,25 @@ exports.storeFilesInS3 = async (coverPhoto, voiceRecording, storyPhotos) => {
     promises.push(Promise.all(storyPhotos.map(storyPhoto =>
         upload(storyPhoto)
     )))
+    try {
+        const result = await Promise.all(promises);
+        // Get keys and unlink files
+        const coverPhotoKey = result[0].Key;
+        const voiceRecordingKey = result[1].Key;
+        const storyPhotoKeys = result[2].map(storyPhotoRes => storyPhotoRes.Key)
+            
+        for (storyPhoto of storyPhotos) unlinkFile(storyPhoto.path).catch(err => {console.log(err)});
+        unlinkFile(coverPhoto.path).catch(err => {console.log(err)});
+        unlinkFile(voiceRecording.path).catch(err => {console.log(err)});
 
-    const result = await Promise.all(promises);
-    // Get keys and unlink files
-    const coverPhotoKey = result[0].key;
-    const voiceRecordingKey = result[1].key;
-    const storyPhotoKeys = result[2].map(storyPhotoRes => storyPhotoRes.key)
-        
-    for (storyPhoto of storyPhotos) unlinkFile(storyPhoto.path).catch(err => {console.log(err)});
-    unlinkFile(coverPhoto.path).catch(err => {console.log(err)});
-    unlinkFile(voiceRecording.path).catch(err => {console.log(err)});
-
-    return {
-        coverPhotoKey,
-        voiceRecordingKey,
-        storyPhotoKeys
+        return {
+            coverPhotoKey,
+            voiceRecordingKey,
+            storyPhotoKeys
+        }
+    } catch (err) {
+        console.log(err);
+        return {};
     }
 }
 

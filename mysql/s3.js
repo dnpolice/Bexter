@@ -59,6 +59,17 @@ exports.getS3Objects = (keys) => {
     ))
 };
 
+exports.getS3Urls= (keys) => {
+    return Promise.all(keys.map(key =>
+        new Promise(function(resolve, reject) {
+            s3.getSignedUrl('getObject', {
+                Bucket: bucketName,
+                Key: key
+            }, function(err, url) { resolve(url); })
+        }
+    )))
+};
+
 exports.getS3Url = (key) => {
     return new Promise(function(resolve, reject) {
         s3.getSignedUrl('getObject', {

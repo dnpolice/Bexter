@@ -6,7 +6,7 @@ const robotAuth = require('../middleware/robotAuth');
 
 const db = require("../mysql/config");
 const { storeFilesInS3, createStoryObj, extractStoryFiles, verifyStoryInput } = require("../helpers/stories");
-const { getS3Object, getS3Objects, getS3Url, deleteS3Object } = require("../mysql/s3");
+const { getS3Object, getS3Objects, getS3Url, deleteS3Object, getS3Urls } = require("../mysql/s3");
 
 
 // @route POST /stories/create
@@ -18,6 +18,7 @@ router.post('/create', extractStoryFiles, verifyStoryInput, async (req,res) => {
     if(!requestErrors.isEmpty()){
         return res.status(400).json({msg: requestErrors.array()});
     }
+
     const {
         coverPhotoKey,
         voiceRecordingKey,
@@ -112,6 +113,69 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
         promises.push(getS3Object(cover_photo_key));
         promises.push(getS3Object(voice_recording_key));
         promises.push(getS3Objects(story_photo_keys));
+        const promiseResult = await Promise.all(promises);
+
+        const coverPhoto = promiseResult[0]
+        const voiceRecording = promiseResult[1]
+        const storyPhotos = promiseResult[2]
+
+        const robotStory = {
+            id: story.id,
+            coverPhoto,
+            voiceRecording,
+            storyPhotos,
+            storyPhotoTimes: JSON.parse(story.story_photo_times),
+	        transcriptOfKeywords: JSON.parse(story.transcript_of_keywords),
+            transcriptOfKeywordTimes: JSON.parse(story.transcript_of_keyword_times)
+        }
+
+        let user_id_query =  `Select * FROM users where robotSerialNumber = ${req.robotSerialNumber}`;
+        db.query(user_id_query, (err, result) => {
+            if (err) {
+                return res.status(500).json({msg: err.sqlMessage});
+            } else {
+                if (result.length == 0) {
+                    return res.status(400).json({msg: "Invalid robot serial number"});
+                }
+                let user_id = result[0].userID;
+                let previously_watched_sql = 'INSERT INTO user_to_story_previously_watched SET ?';
+                let user_to_story_previously_watched = {
+                    story_id: req.params.storyId, 
+                    user_id: user_id
+                }
+                
+                db.query(previously_watched_sql, user_to_story_previously_watched, (err, result) => {
+                    if (err) {
+                        if (err.code != 'ER_DUP_ENTRY') return res.status(500).json({msg: err.sqlMessage});
+                    }
+                    return res.status(200).json(robotStory);
+                });
+            }
+        });
+    });
+});
+
+// @route GET /stories/robot/:storyId
+// @description Return the story for the robot
+// @access Public
+router.get('/robots/:storyId', robotAuth, async (req,res) => {
+    let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
+    db.query(sql, async (err, result) => {
+        if (err) {
+            return res.status(500).json({msg: err.sqlMessage});
+        } else if (result.length == 0) {
+            return res.status(400).json({msg: "Story doesn't exist"});
+        }
+        const story = result[0];
+        const cover_photo_key = story.cover_photo_path;
+        const voice_recording_key = story.voice_recording_path;
+        const story_photo_keys = JSON.parse(story.story_photo_paths);
+
+        const promises = [];
+        promises.push(getS3Url(cover_photo_key));
+        promises.push(getS3Url(voice_recording_key));
+        promises.push(getS3Urls(story_photo_keys));
+        
         const promiseResult = await Promise.all(promises);
 
         const coverPhoto = promiseResult[0]
