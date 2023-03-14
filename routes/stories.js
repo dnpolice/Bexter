@@ -159,7 +159,7 @@ router.get('/robot/:storyId', robotAuth, async (req,res) => {
 // @description Return the story for the robot
 // @access Public
 router.get('/robots/:storyId', robotAuth, async (req,res) => {
-    let sql = `SELECT * FROM stories where id = ${req.params.storyId} and is_visible = true`;
+    let sql = `SELECT * FROM stories where id = ${req.params.storyId}`;
     db.query(sql, async (err, result) => {
         if (err) {
             return res.status(500).json({msg: err.sqlMessage});
@@ -424,7 +424,7 @@ router.post('/search', [
 // @description Returns all stories
 // @access Public
 router.get('/all', async (req,res) => {
-    let sql = `select * from stories`;
+    let sql = `select * from stories where is_visible = true`;
     db.query(sql, async (err, result) => {
         if (err) {
             return res.status(500).json({msg: err.sqlMessage});
