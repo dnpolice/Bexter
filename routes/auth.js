@@ -48,6 +48,7 @@ router.post('/login', [
     else{
         return res.status(403).json({msg: 'Incorrect email/password (user email not found)'});
     }
+    const userName = theUser[0].name;
 
     // now create token:
     const user = { email: email, password: password};
@@ -58,7 +59,7 @@ router.post('/login', [
     const cookieOptions = {httpOnly: true, secure: false};
     res.cookie('saveUser', accessToken, cookieOptions);
 
-    res.status(200).json({accessToken: accessToken});
+    res.status(200).json({accessToken: accessToken, name: userName});
 })
 
 /*
