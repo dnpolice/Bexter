@@ -31,7 +31,7 @@ router.post('/login', [
         return res.status(400).json({ errors: requestErrors.array() });
     }
     
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
     const getUser = () => { return new Promise(resolve =>
         userQuery.getUserWithEmail(email, (err, results) => {
@@ -58,7 +58,7 @@ router.post('/login', [
     const cookieOptions = {httpOnly: true, secure: false};
     res.cookie('saveUser', accessToken, cookieOptions);
 
-    res.status(200).json({accessToken: accessToken});
+    res.status(200).json({accessToken: accessToken, name: name});
 })
 
 /*
